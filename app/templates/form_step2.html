@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="steps"><b>Step 3 of 6:</b> Address Details</div>
+<h2>Address Details</h2>
+
+<form method="post">
+
+  <label>House Number / Street / Mohalla*</label>
+  <input type="text" name="full_address" value="{{ data.get('full_address', '') }}" required>
+
+  <label>Village / Town*</label>
+  <input type="text" name="village" value="{{ data.get('village', '') }}" required>
+
+  <label>Post Office*</label>
+  <input type="text" name="post_office" value="{{ data.get('post_office', '') }}" required>
+
+  <label>Block / Tehsil*</label>
+  <input type="text" name="block" value="{{ data.get('block', '') }}" required>
+
+  <label>District*</label>
+  <input type="text" name="district" value="{{ data.get('district', '') }}" required>
+
+  <label>State*</label>
+  <input type="text" name="state" value="{{ data.get('state', 'Uttar Pradesh') }}" required>
+
+  <label>PIN Code*</label>
+  <input type="text" name="pin_code" value="{{ data.get('pin_code', '') }}" pattern="[0-9]{6}" maxlength="6" required>
+
+  <p>
+    <button class="btn" type="submit">Save &amp; Continue</button>
+  </p>
+
+</form>
+{% endblock %}

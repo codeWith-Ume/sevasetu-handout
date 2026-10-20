@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Edit Application</h2>
+<p>Correct your details and save the changes.</p>
+
+<form method="post">
+  <label>Full Name*</label>
+  <input name="applicant_name" maxlength="100"
+         value="{{ data.get('applicant_name','') }}" required>
+
+  <label>Date of Birth (DD/MM/YYYY)*</label>
+  <input name="dob" placeholder="DD/MM/YYYY"
+         value="{{ data.get('dob','') }}" required>
+
+  <label>Gender*</label>
+  <select name="gender" required>
+    <option value="">--Select--</option>
+    {% for option in ['Male', 'Female', 'Other'] %}
+    <option value="{{ option }}" {% if data.get('gender') == option %}selected{% endif %}>{{ option }}</option>
+    {% endfor %}
+  </select>
+
+  <label>Marital Status*</label>
+  <select name="marital_status" required>
+    <option value="">--Select--</option>
+    {% for option in ['Married', 'Unmarried', 'Widowed'] %}
+    <option value="{{ option }}" {% if data.get('marital_status') == option %}selected{% endif %}>{{ option }}</option>
+    {% endfor %}
+  </select>
+
+  <label>Spouse's Name (if applicable)</label>
+  <input name="husband_name" value="{{ data.get('husband_name','') }}">
+
+  <label>Spouse's Occupation/Employer (if applicable)</label>
+  <input name="husband_employer" value="{{ data.get('husband_employer','') }}">
+
+  <label>Village/Town*</label>
+  <input name="village" maxlength="100"
+         value="{{ data.get('village','') }}" required>
+
+  <label>Block/Tehsil*</label>
+  <input name="block" maxlength="50"
+         value="{{ data.get('block','') }}" required>
+
+  <label>Bank Account Number*</label>
+  <input name="bank_account" maxlength="30"
+         value="{{ data.get('bank_account','') }}" required>
+
+  <label>IFSC Code*</label>
+  <input name="ifsc" maxlength="15"
+         value="{{ data.get('ifsc','') }}" required>
+
+  <p><button class="btn" type="submit">Save Changes</button></p>
+</form>
+
+<p><a href="{{ url_for('view_application', app_id=app_id) }}">Cancel</a></p>
+{% endblock %}
