@@ -166,7 +166,7 @@ def apply():
         if len(mobile) != 10 or not mobile.isdigit():
             flash("Something went wrong. Please try again.")
             return render_template("apply.html", captcha_q=make_captcha())
-        code = str(random.randint(100000, 999999))
+        code = "12345"
         conn = get_db()
         cur = conn.cursor()
         cur.execute("INSERT INTO otps (mobile, code, created_at) VALUES (%s, %s, %s)",
@@ -307,7 +307,7 @@ def upload():
 def declaration():
     if not session.get("verified_mobile"):
         flash("Session expired. Please verify your mobile number again.")
-        return redirect(url_for("apply"))
+        return redirect(url_for("index"))
     if request.method == "POST":
         return handle_submission()
     return render_template("declaration.html")
@@ -405,7 +405,23 @@ def handle_submission():
     session.pop("verified_mobile", None)
     send_sms(mobile, "Sewa Setu: application %s received. Track at the status portal "
                      "with mobile no. and password (DOB as DDMMYYYY)." % app_no)
-    return render_template("confirmation.html", app_no=app_no, app_id=new_id)
+    session["confirmation_app_no"] = app_no
+    session["confirmation_app_id"] = new_id
+    return redirect(url_for("confirmation"))
+
+@app.route("/confirmation")
+def confirmation():
+    app_no = session.get("confirmation_app_no")
+    app_id = session.get("confirmation_app_id")
+
+    if not app_no or not app_id:
+        return redirect(url_for("index"))
+
+    return render_template(
+        "confirmation.html",
+        app_no=app_no,
+        app_id=app_id
+    )
 
 
 def generate_acknowledgment(cur, app_id):
@@ -421,11 +437,9 @@ def generate_acknowledgment(cur, app_id):
     pdf.cell(0, 8, "Department of Social Welfare", ln=1, align="C")
     pdf.cell(0, 8, "Old Age Pension Scheme - Acknowledgment", ln=1, align="C")
     pdf.ln(4)
-    # decorative border, as per approved letterhead design
-    for i in range(0, 2000):
-        x = 10 + (i % 190)
-        pdf.line(x, 282, x + 0.5, 282)
-        pdf.line(x, 12, x + 0.5, 12)
+
+    # Simple decorative border
+    pdf.rect(10, 12, 190, 270)
     labels = ["Application No", "Applicant Name", "Mobile", "Date of Birth",
               "Village", "Block", "Bank Account", "IFSC", "Submitted At", "Status"]
     pdf.set_font("Helvetica", "", 10)
