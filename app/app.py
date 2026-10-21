@@ -141,10 +141,13 @@ def gateway_proxy(subpath):
 # ---------------------------------------------------------------------------
 
 @app.route("/apply", methods=["GET", "POST"])
+
+@app.route("/apply", methods=["GET", "POST"])
 def apply():
     if deadline_remaining() is None:
         flash("The application window for this scheme has closed.")
         return redirect(url_for("index"))
+
     if request.method == "POST":
         mobile = request.form.get("mobile", "").strip()
         captcha = request.form.get("captcha", "").strip().upper()
@@ -162,21 +165,17 @@ def apply():
             session.pop("captcha_created_at", None)
             flash("CAPTCHA expired or incorrect. Please try again.")
             return redirect(url_for("apply"))
-        
+
         if len(mobile) != 10 or not mobile.isdigit():
             flash("Something went wrong. Please try again.")
             return render_template("apply.html", captcha_q=make_captcha())
-        code = "12345"
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("INSERT INTO otps (mobile, code, created_at) VALUES (%s, %s, %s)",
-                    (mobile, code, datetime.now()))
-        conn.commit()
-        cur.close(); conn.close()
-        send_sms(mobile, "Your Sewa Setu OTP is %s. Valid for 5 minutes." % code)
+
         session.permanent = True
         session["apply_mobile"] = mobile
+        session["otp_code"] = "12345"
+
         return redirect(url_for("verify"))
+
     return render_template("apply.html", captcha_q=make_captcha())
 
 
@@ -208,30 +207,24 @@ def captcha_image():
     )
    
 
-
 @app.route("/verify", methods=["GET", "POST"])
 def verify():
     mobile = session.get("apply_mobile")
     if not mobile:
         return redirect(url_for("apply"))
+
     if request.method == "POST":
         code = request.form.get("otp", "").strip()
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT code, created_at FROM otps WHERE mobile = %s "
-                    "ORDER BY id DESC LIMIT 1", (mobile,))
-        row = cur.fetchone()
-        cur.close(); conn.close()
-        if row and row[0] == code:
-            age = (datetime.now() - row[1]).total_seconds()
-            if age > OTP_VALIDITY_SECONDS:
-                app.logger.warning("otp expired mobile=%s age=%ds" % (mobile, int(age)))
-                flash("OTP expired. Please request a new OTP.")
-                return redirect(url_for("apply"))
+
+        if code == "12345":
             session["verified_mobile"] = mobile
+            session.pop("otp_code", None)
             return redirect(url_for("form_step", step=1))
+
         flash("Invalid OTP.")
+
     return render_template("verify.html", mobile=mobile)
+
 
 
 @app.route("/form/<int:step>", methods=["GET", "POST"])
