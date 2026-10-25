@@ -139,9 +139,6 @@ def gateway_proxy(subpath):
 # ---------------------------------------------------------------------------
 # Application flow: mobile -> OTP -> form steps -> upload -> declaration
 # ---------------------------------------------------------------------------
-
-@app.route("/apply", methods=["GET", "POST"])
-
 @app.route("/apply", methods=["GET", "POST"])
 def apply():
     if deadline_remaining() is None:
@@ -313,22 +310,27 @@ def handle_submission():
     doc_path = session.get("doc_path", "")
 
     name = sanitize(data.get("applicant_name", ""))
+    full_address = data.get("full_address", "").strip()
     village = data.get("village", "").strip()
+    post_office = data.get("post_office", "").strip()
     block = data.get("block", "").strip()
+    district = data.get("district", "").strip()
+    state = data.get("state", "").strip()
+    pin_code = data.get("pin_code", "").strip()
     gender = data.get("gender", "")
     marital = data.get("marital_status", "")
-    husband_name = data.get("husband_name", "")
-    husband_employer = data.get("husband_employer", "")
+    spouse_name = data.get("spouse_name", "")
+    spouse_employer = data.get("spouse_employer", "")
     bank_account = data.get("bank_account", "").strip()
     ifsc = data.get("ifsc", "").strip().upper()
     dob_raw = data.get("dob", "").strip()
 
-    if not name or not village or not block or not bank_account or not dob_raw:
+    if not all([name,full_address,village,post_office,block,district,state,pin_code,bank_account,dob_raw]):
         flash("Something went wrong. Please try again.")
         return redirect(url_for("form_step", step=1))
 
     if marital == "Widowed":
-        if not husband_name or not husband_employer:
+        if not spouse_name or not spouse_employer:
             flash("Something went wrong. Please try again.")
             return redirect(url_for("form_step", step=1))
 
@@ -368,15 +370,17 @@ def handle_submission():
     cur.execute(
         """INSERT INTO applications
            (application_no, applicant_name, mobile, dob, gender, marital_status,
-            husband_name, husband_employer, village, block, bank_account, ifsc,
-            doc_path, status, submitted_at)
-           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'PENDING',%s)
-           RETURNING id""",
-        (app_no, name, mobile, dob, gender, marital, husband_name,
-         husband_employer, village, block, bank_account, ifsc, doc_path,
-         datetime.now()))
+           spouse_name, spouse_employer, full_address, village, post_office,
+           block, district, state, pin_code, bank_account, ifsc,
+           doc_path, status, submitted_at)
+         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'PENDING',%s)
+         RETURNING id""",
+       (app_no, name, mobile, dob, gender, marital, spouse_name,
+        spouse_employer, full_address, village, post_office, block,
+        district, state, pin_code, bank_account, ifsc, doc_path,
+        datetime.now())
+)
     new_id = cur.fetchone()[0]
-
     # status portal account; password is DOB as DDMMYYYY per dept. circular
     portal_pass = dob.strftime("%d%m%Y")
     cur.execute("SELECT count(*) FROM portal_users WHERE mobile = %s", (mobile,))
@@ -514,11 +518,12 @@ def edit_application(app_id):
 
     cur.execute(
         """SELECT applicant_name, dob, gender, marital_status,
-                  husband_name, husband_employer, village, block,
-                  bank_account, ifsc, status
-           FROM applications
-           WHERE id = %s AND mobile = %s""",
-        (app_id, mobile)
+            spouse_name, spouse_employer, full_address, village,
+            post_office, block, district, state, pin_code,
+            bank_account, ifsc, status
+        FROM applications
+        WHERE id = %s AND mobile = %s""",
+      (app_id, mobile)
     )
     row = cur.fetchone()
 
@@ -527,7 +532,7 @@ def edit_application(app_id):
         conn.close()
         abort(404)
 
-    if row[10] != "PENDING":
+    if row[15] != "PENDING":
         cur.close()
         conn.close()
         flash("Only pending applications can be edited.")
@@ -538,12 +543,20 @@ def edit_application(app_id):
         dob_raw = request.form.get("dob", "").strip()
         gender = request.form.get("gender", "")
         marital = request.form.get("marital_status", "")
-        husband_name = request.form.get("husband_name", "").strip()
-        husband_employer = request.form.get("husband_employer", "").strip()
+        spouse_name = request.form.get("spouse_name", "").strip()
+        spouse_employer = request.form.get("spouse_employer", "").strip()
+
+        full_address = request.form.get("full_address", "").strip()
         village = request.form.get("village", "").strip()
+        post_office = request.form.get("post_office", "").strip()
         block = request.form.get("block", "").strip()
+        district = request.form.get("district", "").strip()
+        state = request.form.get("state", "").strip()
+        pin_code = request.form.get("pin_code", "").strip()
+
         bank_account = request.form.get("bank_account", "").strip()
         ifsc = request.form.get("ifsc", "").strip().upper()
+
 
         dob = None
         for fmt in ("%d/%m/%Y", "%m/%d/%Y"):
@@ -553,7 +566,7 @@ def edit_application(app_id):
             except ValueError:
                 pass
 
-        if not all([name, dob, village, block, bank_account, ifsc]):
+        if not all([name,full_address,village,post_office,block,district,state,pin_code,bank_account,dob_raw]):
             flash("Please fill in all required fields correctly.")
             cur.close()
             conn.close()
@@ -583,7 +596,7 @@ def edit_application(app_id):
             conn.close()
             return redirect(url_for("edit_application", app_id=app_id))
 
-        if marital == "Widowed" and not husband_name:
+        if marital == "Widowed" and not spouse_name:
             flash("Please enter the spouse's name.")
             cur.close()
             conn.close()
@@ -602,17 +615,18 @@ def edit_application(app_id):
 
         cur.execute(
             """UPDATE applications
-               SET applicant_name = %s, dob = %s, gender = %s,
-                   marital_status = %s, husband_name = %s,
-                   husband_employer = %s, village = %s, block = %s,
-                   bank_account = %s, ifsc = %s
-               WHERE id = %s AND mobile = %s AND status = 'PENDING'""",
-            (
-                name, dob, gender, marital, husband_name,
-                husband_employer, village, block, bank_account,
-                ifsc, app_id, mobile
-            )
-        )
+            SET applicant_name = %s, dob = %s, gender = %s,
+              marital_status = %s, spouse_name = %s,
+              spouse_employer = %s, full_address = %s, village = %s,
+              post_office = %s, block = %s, district = %s,
+              state = %s, pin_code = %s, bank_account = %s, ifsc = %s
+            WHERE id = %s AND mobile = %s AND status = 'PENDING'""",
+       (
+          name, dob, gender, marital, spouse_name, spouse_employer,
+          full_address, village, post_office, block, district, state,
+          pin_code, bank_account, ifsc, app_id, mobile
+       )
+    )
 
         if cur.rowcount != 1:
             conn.rollback()
@@ -639,12 +653,17 @@ def edit_application(app_id):
         "dob": row[1].strftime("%d/%m/%Y") if row[1] else "",
         "gender": row[2] or "",
         "marital_status": row[3] or "",
-        "husband_name": row[4] or "",
-        "husband_employer": row[5] or "",
-        "village": row[6] or "",
-        "block": row[7] or "",
-        "bank_account": row[8] or "",
-        "ifsc": row[9] or "",
+        "spouse_name": row[4] or "",
+        "spouse_employer": row[5] or "",
+        "full_address": row[6] or "",
+        "village": row[7] or "",
+        "post_office": row[8] or "",
+        "block": row[9] or "",
+        "district": row[10] or "",
+        "state": row[11] or "",
+        "pin_code": row[12] or "",
+        "bank_account": row[13] or "",
+        "ifsc": row[14] or "",
     }
 
     cur.close()
