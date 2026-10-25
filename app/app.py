@@ -164,16 +164,35 @@ def apply():
             return redirect(url_for("apply"))
 
         if len(mobile) != 10 or not mobile.isdigit():
-            flash("Something went wrong. Please try again.")
+            flash("Please enter a valid 10-digit mobile number.")
             return render_template("apply.html", captcha_q=make_captcha())
+
+        otp = str(secrets.randbelow(90000) + 10000)
+
+        try:
+            response = requests.post(
+                SMS_GATEWAY_URL + "/api/send",
+                json={
+                    "to": mobile,
+                    "text": f"Your Sewa Setu OTP is {otp}"
+                },
+                timeout=10
+            )
+            response.raise_for_status()
+
+        except requests.RequestException:
+            session.pop("otp_code", None)
+            flash("Unable to send OTP. Please try again.")
+            return redirect(url_for("apply"))
 
         session.permanent = True
         session["apply_mobile"] = mobile
-        session["otp_code"] = "12345"
+        session["otp_code"] = otp
 
         return redirect(url_for("verify"))
 
     return render_template("apply.html", captcha_q=make_captcha())
+
 
 
 def make_captcha():
@@ -212,8 +231,9 @@ def verify():
 
     if request.method == "POST":
         code = request.form.get("otp", "").strip()
+        otp = session.get("otp_code")
 
-        if code == "12345":
+        if otp and secrets.compare_digest(code, otp):
             session["verified_mobile"] = mobile
             session.pop("otp_code", None)
             return redirect(url_for("form_step", step=1))
