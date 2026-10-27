@@ -13,6 +13,15 @@ class SchedulerConfigTest(unittest.TestCase):
 
         config_file = project_root / "app" / "config" / "app.ini"
         self.assertTrue(config_file.exists())
+        
+    def test_dockerfile_starts_cron_service(self):
+        project_root = Path(__file__).resolve().parents[1]
+        dockerfile = project_root / "app" / "Dockerfile"
+
+        source = dockerfile.read_text()
+
+        self.assertIn("cron", source.lower())
+        self.assertRegex(source, r"(service cron start|cron -f)")
 
 
 if __name__ == "__main__":
