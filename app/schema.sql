@@ -40,3 +40,7 @@ CREATE TABLE IF NOT EXISTS otps (
     code       VARCHAR(6),
     created_at TIMESTAMP
 );
+
+-- Improve dashboard queries for pending and overdue applications.
+CREATE INDEX IF NOT EXISTS idx_applications_status_submitted_at
+ON applications (status, submitted_at);
