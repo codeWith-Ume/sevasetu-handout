@@ -351,8 +351,8 @@ def handle_submission():
     pin_code = data.get("pin_code", "").strip()
     gender = data.get("gender", "")
     marital = data.get("marital_status", "")
-    spouse_name = data.get("spouse_name", "")
-    spouse_employer = data.get("spouse_employer", "")
+    guardian_name = data.get("guardian_name", "")
+    account_holder_name = data.get("account_holder_name", "").strip()
     bank_account = data.get("bank_account", "").strip()
     ifsc = data.get("ifsc", "").strip().upper()
     dob_raw = data.get("dob", "").strip()
@@ -362,7 +362,7 @@ def handle_submission():
         return redirect(url_for("form_step", step=1))
 
     if marital == "Widowed":
-        if not spouse_name or not spouse_employer:
+        if not guardian_name:
             flash("Something went wrong. Please try again.")
             return redirect(url_for("form_step", step=1))
 
@@ -402,17 +402,18 @@ def handle_submission():
     cur.execute(
         """INSERT INTO applications
            (application_no, applicant_name, mobile, dob, gender, marital_status,
-           spouse_name, spouse_employer, full_address, village, post_office,
-           block, district, state, pin_code, bank_account, ifsc,
-           doc_path, status, submitted_at)
+           guardian_name, full_address, village, post_office,
+           block, district, state, pin_code, account_holder_name,
+           bank_account, ifsc, doc_path, status, submitted_at)
          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'PENDING',%s)
          RETURNING id""",
-       (app_no, name, mobile, dob, gender, marital, spouse_name,
-        spouse_employer, full_address, village, post_office, block,
-        district, state, pin_code, bank_account, ifsc, doc_path,
+       (app_no, name, mobile, dob, gender, marital, guardian_name,
+        full_address, village, post_office, block, district, state,
+        pin_code, account_holder_name, bank_account, ifsc, doc_path,
         datetime.now())
-)
+    )
     new_id = cur.fetchone()[0]
+
         # Create a portal account with a random, undisclosed password.
     cur.execute("SELECT count(*) FROM portal_users WHERE mobile = %s", (mobile,))
     if cur.fetchone()[0] == 0:
@@ -554,7 +555,7 @@ def edit_application(app_id):
 
     cur.execute(
         """SELECT applicant_name, dob, gender, marital_status,
-            spouse_name, spouse_employer, full_address, village,
+            guardian_name, account_holder_name, full_address, village,
             post_office, block, district, state, pin_code,
             bank_account, ifsc, status
         FROM applications
@@ -579,8 +580,8 @@ def edit_application(app_id):
         dob_raw = request.form.get("dob", "").strip()
         gender = request.form.get("gender", "")
         marital = request.form.get("marital_status", "")
-        spouse_name = request.form.get("spouse_name", "").strip()
-        spouse_employer = request.form.get("spouse_employer", "").strip()
+        guardian_name = request.form.get("guardian_name", "").strip()
+        account_holder_name = request.form.get("account_holder_name", "").strip()
 
         full_address = request.form.get("full_address", "").strip()
         village = request.form.get("village", "").strip()
@@ -632,7 +633,7 @@ def edit_application(app_id):
             conn.close()
             return redirect(url_for("edit_application", app_id=app_id))
 
-        if marital == "Widowed" and not spouse_name:
+        if marital == "Widowed" and not guardian_name:
             flash("Please enter the spouse's name.")
             cur.close()
             conn.close()
@@ -652,13 +653,13 @@ def edit_application(app_id):
         cur.execute(
             """UPDATE applications
             SET applicant_name = %s, dob = %s, gender = %s,
-              marital_status = %s, spouse_name = %s,
-              spouse_employer = %s, full_address = %s, village = %s,
+              marital_status = %s, guardian_name = %s,
+              account_holder_name = %s, full_address = %s, village = %s,
               post_office = %s, block = %s, district = %s,
               state = %s, pin_code = %s, bank_account = %s, ifsc = %s
             WHERE id = %s AND mobile = %s AND status = 'PENDING'""",
        (
-          name, dob, gender, marital, spouse_name, spouse_employer,
+          name, dob, gender, marital, guardian_name, account_holder_name,
           full_address, village, post_office, block, district, state,
           pin_code, bank_account, ifsc, app_id, mobile
        )
@@ -683,8 +684,8 @@ def edit_application(app_id):
         "dob": row[1].strftime("%d/%m/%Y") if row[1] else "",
         "gender": row[2] or "",
         "marital_status": row[3] or "",
-        "spouse_name": row[4] or "",
-        "spouse_employer": row[5] or "",
+        "guardian_name": row[4] or "",
+        "account_holder_name": row[5] or "",
         "full_address": row[6] or "",
         "village": row[7] or "",
         "post_office": row[8] or "",

@@ -3,6 +3,8 @@
 <div class="steps"><b>Step 4 of 6:</b> Bank Details</div>
 <h2>Bank Details for Pension Disbursement</h2>
 <form method="post">
+  <label>Account Holder's Name*</label>
+  <input type="text" name="account_holder_name" value="{{ data.get('account_holder_name','') }}" required>
   <label>Bank Account Number*</label>
   <input type="text" name="bank_account" value="{{ data.get('bank_account','') }}">
   <label>IFSC Code*</label>

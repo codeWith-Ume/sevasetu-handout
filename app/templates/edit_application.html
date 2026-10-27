@@ -36,54 +36,54 @@
     {% endfor %}
   </select>
 
-  <label>Spouse's Name (if applicable)</label>
-  <input type="text" name="spouse_name"
-         value="{{ data.get('spouse_name', '') }}">
-
-  <label>Spouse's Occupation/Employer (if applicable)</label>
-  <input type="text" name="spouse_employer"
-         value="{{ data.get('spouse_employer', '') }}">
+  <label> Spouse's Name / Father's Name / Guardian Name*</label>
+  <input type="text" name="guardian_name"
+         value="{{ data.get('guardian_name', '') }}">
 
   <h3>Address Details</h3>
 
   <label>House Number / Street / Mohalla*</label>
   <input type="text" name="full_address"
-         value="{{ data.get('full_address', '') }}" required>
+         value="{{ data.get('full_address', '') }}">
 
   <label>Village / Town*</label>
   <input type="text" name="village" maxlength="100"
-         value="{{ data.get('village', '') }}" required>
+         value="{{ data.get('village', '') }}">
 
   <label>Post Office*</label>
   <input type="text" name="post_office"
-         value="{{ data.get('post_office', '') }}" required>
+         value="{{ data.get('post_office', '') }}">
 
   <label>Block / Tehsil*</label>
   <input type="text" name="block" maxlength="50"
-         value="{{ data.get('block', '') }}" required>
+         value="{{ data.get('block', '') }}">
 
   <label>District*</label>
   <input type="text" name="district"
-         value="{{ data.get('district', '') }}" required>
+         value="{{ data.get('district', '') }}">
 
   <label>State*</label>
   <input type="text" name="state"
-         value="{{ data.get('state', 'Uttar Pradesh') }}" required>
+         value="{{ data.get('state', 'Uttar Pradesh') }}">
 
   <label>PIN Code*</label>
   <input type="text" name="pin_code"
          value="{{ data.get('pin_code', '') }}"
-         pattern="[0-9]{6}" maxlength="6" required>
+         pattern="[0-9]{6}" maxlength="6">
 
   <h3>Bank Details</h3>
 
+  <label>Account Holder's Name*</label>
+  <input type="text" name="account_holder_name"
+         value="{{ data.get('account_holder_name', '') }}">
+
   <label>Bank Account Number*</label>
   <input type="text" name="bank_account" maxlength="30"
-         value="{{ data.get('bank_account', '') }}" required>
+         value="{{ data.get('bank_account', '') }}">
 
   <label>IFSC Code*</label>
   <input type="text" name="ifsc" maxlength="15"
-         value="{{ data.get('ifsc', '') }}" required>
+         value="{{ data.get('ifsc', '') }}">
 
   <p>
     <button class="btn" type="submit">Save Changes</button>

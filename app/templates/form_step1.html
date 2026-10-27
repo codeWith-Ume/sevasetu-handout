@@ -21,10 +21,8 @@
     <option {% if data.get('marital_status')=='Unmarried' %}selected{% endif %}>Unmarried</option>
     <option {% if data.get('marital_status')=='Widowed' %}selected{% endif %}>Widowed</option>
   </select>
-  <label>Spouse's Name(if applicable)</label>
-  <input type="text" name="spouse_name" value="{{ data.get('spouse_name','') }}">
-  <label>Spouse's Occupation/Employer(if applicable)</label>
-  <input type="text" name="spouse_employer" value="{{ data.get('spouse_employer','') }}">
+  <label>Spouse's Name / Father's Name / Guardian Name*</label>
+  <input type="text" name="guardian_name" value="{{ data.get('guardian_name','') }}">
   <p class="note">Fields marked * are required.</p>
   <p><button class="btn" type="submit">Save &amp; Continue</button></p>
 </form>

@@ -28,7 +28,7 @@ class FakeCursor:
     def fetchone(self):
         return (
             "Old Name", date(1950, 1, 1), "Female", "Widowed",
-            "Spouse Name", "Employer", "Old Address", "Old Village",
+            "Guardian Name", "Account Holder", "Old Address", "Old Village",
             "Post Office", "Block", "District", "State", "495001",
             "1234567890", "ABCD0123456", "PENDING"
         )
@@ -67,8 +67,8 @@ class EditApplicationTest(unittest.TestCase):
                 "dob": "01/01/1950",
                 "gender": "Female",
                 "marital_status": "Widowed",
-                "spouse_name": "Spouse Name",
-                "spouse_employer": "Employer",
+                "guardian_name": "Guardian Name",
+                "account_holder_name": "Account Holder",
                 "full_address": "New Address",
                 "village": "New Village",
                 "post_office": "Post Office",
@@ -96,7 +96,7 @@ class EditApplicationTest(unittest.TestCase):
         self.assertEqual(len(update_queries), 1)
         self.assertTrue(connection.committed)
         self.assertEqual(response.status_code, 302)
-        
+
     def test_citizen_cannot_edit_another_citizens_application(self):
         connection = FakeConnection()
 
