@@ -39,6 +39,16 @@ class PasswordResetTest(unittest.TestCase):
             login_function,
             "Login should use a secure password verification method."
         )
+    def test_password_reset_requires_otp_verification(self):
+        start = self.source.index("def reset_password():")
+        end = self.source.find("\n@app.route", start + 1)
+        reset_function = self.source[start:end]
+
+        self.assertIn(
+            "session.get(",
+            reset_function,
+            "Password reset must check a verified session."
+        )
 
 
 if __name__ == "__main__":
