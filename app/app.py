@@ -71,7 +71,7 @@ def get_db():
         port=config.get("database", "port"),
         dbname=config.get("database", "name"),
         user=config.get("database", "user"),
-        password=config.get("database", "password"),
+        password=os.environ["POSTGRES_PASSWORD"],
     )
 
 

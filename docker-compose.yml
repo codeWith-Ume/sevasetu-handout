@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: sewasetu
       POSTGRES_USER: sewasetu
-      POSTGRES_PASSWORD: sewasetu123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./app/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
@@ -21,9 +21,6 @@ services:
       - uploads:/var/sewasetu/uploads
       - applogs:/var/log/sewasetu
     
-    #Adding .env file for main application, part of otp issue
-    env_file:
-      - .env
     
 
   scheduler:

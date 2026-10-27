@@ -29,12 +29,17 @@ SMS_GATEWAY_URL = config.get("app", "sms_gateway_url")
 
 
 def main():
-    conn = psycopg2.connect(
+    database_url = os.environ.get("DATABASE_URL")
+
+    if database_url:
+        conn = psycopg2.connect(database_url)
+    else:
+        conn = psycopg2.connect(
         host=config.get("database", "host"),
         port=config.get("database", "port"),
         dbname=config.get("database", "name"),
         user=config.get("database", "user"),
-        password=config.get("database", "password"),
+        password=os.environ["POSTGRES_PASSWORD"],
     )
     cur = conn.cursor()
     cutoff = datetime.now() - timedelta(days=SLA_DAYS)
