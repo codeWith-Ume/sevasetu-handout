@@ -29,6 +29,16 @@ class PasswordResetTest(unittest.TestCase):
             reset_function,
             "Password must not reset from mobile number alone."
         )
+    def test_login_uses_secure_password_verification(self):
+        start = self.source.index('def status_login():')
+        end = self.source.find('\n@app.route', start + 1)
+        login_function = self.source[start:end]
+
+        self.assertNotIn(
+            'row[0] == hash_password(password)',
+            login_function,
+            "Login should use a secure password verification method."
+        )
 
 
 if __name__ == "__main__":
