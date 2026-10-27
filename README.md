@@ -18,60 +18,54 @@ Production server logs (Jan–Jun 2026) are provided in `logs/`.
 
 Listen to `dc-briefing.mp3` first (the DC's briefing), then read `BRIEF.md`.
 
-# Seva Setu – Fixes and Decisions
+## Sewa Setu – Fixes and Decisions
 
-## First Fix: Clear Information on the Welcome Page and About the Scheme Page
+### 1. Security Improvements
 
-**Problem:** The instructions on the Welcome Page and the About the Scheme page were unclear.
+**Problem:** The portal had security problems that could put citizens' personal information at risk.
 
-**What I Fixed:** On the Welcome Page, I clarified that people aged 60 years or older are eligible. On the About the Scheme page, I clarified the rules and age eligibility information and arranged the information in a proper order.
+**What I Fixed:** I improved security so that one person cannot view or edit another person's application. I improved password security, added OTP verification for password resets, checked that only admins can approve or reject applications, added protection against unsafe inputs, and kept secret information out of the code.
 
-**Why I Fixed It:** I chose this issue as my first priority because users need to understand the purpose of the portal, its eligibility criteria, and its rules before proceeding. The portal must clearly explain who it is for and what citizens need to do.
+**Why I Fixed It:** I prioritized security because the portal stores citizens' personal information. It is important to protect this information from unauthorized access.
 
-**Result:** The portal now provides clearer information and better-organized rules for citizens.
+**Result:** The portal has improved security, and all my security tests are passing.
 
-## Second Fix: Weak Security Before OTP Verification
+### 2. Clear Information and Application Form
 
-**Problem:** The security check before OTP verification was very weak.
+**Problem:** The information on the Welcome Page and About the Scheme page was unclear, and some form fields were confusing.
 
-**What I Fixed:** I replaced the simple calculation-based check with CAPTCHA.
+**What I Fixed:** I clarified the age eligibility on the Welcome Page and organized the scheme rules on the About the Scheme page. I also improved the order of form fields and corrected confusing options.
 
-**Why I Fixed It:** Initially, the security check involved easy calculations, such as 3 + 5. I considered making the calculations more difficult, but bots can also solve complex calculations easily. CAPTCHA can help distinguish real human users from automated bots.
+**Why I Fixed It:** Citizens need to understand the scheme, its rules, and its eligibility requirements before applying. The form should also be easy to understand and fill out.
 
-**Result:** The portal now has a stronger security check than the basic calculation-based method.
+**Result:** Citizens can understand the scheme more easily, and the application form is clearer and better organized.
 
-## Third Fix: Inclusive Personal Details Form
+### 3. Edit Application
 
-**Problem:** The Personal Details form had fields for “Husband’s Name” and “Husband’s Employer.”
+**Problem:** Citizens could not edit their applications after submitting them.
 
-**What I Fixed:** I replaced “Husband’s Name” with “Spouse’s Name” and “Husband’s Employer” with “Spouse’s Employer.”
+**What I Fixed:** I added a new route in `app.py` and created a new template called `edit_application.html` to allow citizens to edit their submitted applications.
 
-**Why I Fixed It:** Although this is an old-age pension form, it is not intended only for women. The previous labels could confuse male citizens filling out the form. Using “Spouse” makes the fields suitable for both men and women.
+**Why I Fixed It:** As per the information provided in the audio briefing, citizens sometimes made mistakes while filling out their applications. They then had to visit a help desk and request the deletion of their applications to correct those mistakes. The editing option helps them correct mistakes without requesting deletion.
 
-**Result:** The Personal Details form is clearer and more inclusive.
+**Result:** Citizens can edit their submitted applications and correct incorrect information.
 
-## Fourth Fix: Improved Address Details Form
+### 4. Assamese Name Issue
 
-**Problem:** The Address Details form had only two fields: Village and Block. The Block field also had a dropdown with limited options.
+**Problem:** Some Assamese characters were displayed as question marks (`????`) in the application form.
 
-**What I Fixed:** I added and arranged the address fields in the following order:
+**What I Fixed:** I fixed the issue that caused Assamese characters to display incorrectly.
 
-House → Village → Post Office → Block → District → State → PIN Code
+**Why I Fixed It:** Citizens should be able to enter and display their names correctly. Incorrect characters can cause problems with their personal information.
 
-**Why I Fixed It:** The previous form did not collect enough information to provide a complete address. Since the form is intended for people from Purvanchal, Uttar Pradesh, I researched the region and found that Uttar Pradesh has more than 70 districts and over 800 blocks. Therefore, the address form needed more complete details rather than limited options.
+**Result:** The fix helps citizens display their names correctly, including names containing Assamese characters.
 
-**Result:** The form now collects more complete address information and presents the fields in a clear order, reducing confusion for citizens.
+### 5. Deemed Approval System
 
-## Fifth Fix: Document Verification Error and Application Editing
+**Problem:** The automatic approval script was looking for the wrong configuration file and could not read the approval settings.
 
-**Problem:** During document verification, the portal displayed the `ERR_VAL_47` error. Additionally, citizens could not edit their applications after submitting them.
+**What I Fixed:** I corrected the configuration file path and added a test to check the issue. The system is designed to automatically approve eligible applications that remain pending for more than 15 days.
 
-**What I Fixed:** I modified the document upload function in `app.py` to address the `ERR_VAL_47` error. I also added a new route in `app.py` and created a new template named `edit_application.html` to allow citizens to edit their submitted applications.
+**Why I Fixed It:** I worked on this issue because long delays can create difficulties for citizens. The automatic approval system is intended to reduce unnecessary delays for eligible applicants.
 
-**Why I Fixed It:**
-
-**For the `ERR_VAL_47` error:** This error prevented citizens from submitting their documents and proceeding to the next stage. Since the application process has six stages, successful document submission is necessary to continue. I wanted to improve the process further by checking whether the submitted identity proof was valid, but I could not implement that functionality.
-
-**For application editing:** This was a serious issue because, as I learned from the audio briefing, citizens sometimes submitted applications with mistakes and then had to visit a help desk to request deletion of their applications so they could correct them. In some cases, names appeared incorrectly even when citizens had entered them correctly. The editing option allows citizens to correct mistakes, including errors in their names.
-
-**Result:** Citizens can upload their documents without encountering the identified error and proceed to the declaration stage. They can also edit their applications to correct mistakes.
+**Result:** The script now looks for the correct configuration file, and a test has been added to check the issue.
