@@ -414,12 +414,14 @@ def handle_submission():
         datetime.now())
 )
     new_id = cur.fetchone()[0]
-    # status portal account; password is DOB as DDMMYYYY per dept. circular
-    portal_pass = dob.strftime("%d%m%Y")
+        # Create a portal account with a random, undisclosed password.
     cur.execute("SELECT count(*) FROM portal_users WHERE mobile = %s", (mobile,))
     if cur.fetchone()[0] == 0:
-        cur.execute("INSERT INTO portal_users (mobile, password_hash) VALUES (%s,%s)",
-                    (mobile, hash_password(portal_pass)))
+        portal_pass = secrets.token_urlsafe(32)
+        cur.execute(
+            "INSERT INTO portal_users (mobile, password_hash) VALUES (%s,%s)",
+            (mobile, hash_password(portal_pass))
+        )
     conn.commit()
 
     app.logger.info("generating acknowledgment pdf application=%d" % new_id)
@@ -433,8 +435,10 @@ def handle_submission():
     session.pop("form_data", None)
     session.pop("doc_path", None)
     session.pop("verified_mobile", None)
-    send_sms(mobile, "Sewa Setu: application %s received. Track at the status portal "
-                     "with mobile no. and password (DOB as DDMMYYYY)." % app_no)
+    send_sms(mobile, 
+            "Sewa Setu: application %s received. Track at the status portal "
+            "use Forgot Password to set your password." % app_no
+    )
     session["confirmation_app_no"] = app_no
     session["confirmation_app_id"] = new_id
     return redirect(url_for("confirmation"))
