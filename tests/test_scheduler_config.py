@@ -14,14 +14,16 @@ class SchedulerConfigTest(unittest.TestCase):
         config_file = project_root / "app" / "config" / "app.ini"
         self.assertTrue(config_file.exists())
         
-    def test_dockerfile_starts_cron_service(self):
+    def test_scheduler_service_starts_cron(self):
         project_root = Path(__file__).resolve().parents[1]
-        dockerfile = project_root / "app" / "Dockerfile"
+        compose_file = project_root / "docker-compose.yml"
 
-        source = dockerfile.read_text()
+        source = compose_file.read_text()
 
-        self.assertIn("cron", source.lower())
-        self.assertRegex(source, r"(service cron start|cron -f)")
+        self.assertRegex(
+            source,
+            r"(?s)scheduler:\s.*?command:\s*\[\"cron\",\s*\"-f\"\]"
+        )
 
 
 if __name__ == "__main__":
