@@ -3,14 +3,16 @@ from pathlib import Path
 
 
 class SchedulerConfigTest(unittest.TestCase):
-    def test_scheduler_config_file_exists(self):
+    def test_scheduler_uses_existing_config_file(self):
         project_root = Path(__file__).resolve().parents[1]
-        config_file = project_root / "app" / "config" / "settings.ini"
+        script = project_root / "app" / "scripts" / "deemed_approval.py"
 
-        self.assertTrue(
-            config_file.exists(),
-            f"Scheduler config file missing: {config_file}"
-        )
+        source = script.read_text()
+
+        self.assertIn('"app.ini"', source)
+
+        config_file = project_root / "app" / "config" / "app.ini"
+        self.assertTrue(config_file.exists())
 
 
 if __name__ == "__main__":
