@@ -17,6 +17,10 @@ services:
     depends_on:
       - db
       - smsgw
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}
     volumes:
       - uploads:/var/sewasetu/uploads
       - applogs:/var/log/sewasetu
@@ -28,6 +32,9 @@ services:
     command: ["cron", "-f"]
     depends_on:
       - db
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      TZ: Asia/Kolkata
     volumes:
       - applogs:/var/log/sewasetu
 
