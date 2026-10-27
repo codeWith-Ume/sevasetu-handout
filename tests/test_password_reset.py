@@ -77,5 +77,19 @@ class PasswordResetTest(unittest.TestCase):
             "DOB must not be used as the password during application editing."
         )
 
+    def test_new_application_does_not_use_dob_as_password(self):
+        self.assertNotIn(
+            'portal_pass = dob.strftime("%d%m%Y")',
+            self.source,
+            "New portal accounts must not use DOB as the password."
+        )
+        self.assertNotIn(
+            "password (DOB as DDMMYYYY)",
+            self.source,
+            "SMS must not tell users to use DOB as their password."
+        )
+
+
+
 if __name__ == "__main__":
     unittest.main()
