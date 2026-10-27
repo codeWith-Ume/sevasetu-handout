@@ -61,6 +61,21 @@ class PasswordResetTest(unittest.TestCase):
             "Login should verify Werkzeug password hashes."
         )
 
+    def test_edit_application_does_not_reset_password_to_dob(self):
+        start = self.source.index('def edit_application(')
+        end = self.source.find('\n@app.route', start + 1)
+        edit_function = self.source[start:end]
+
+        self.assertNotIn(
+            'UPDATE portal_users SET password_hash = %s WHERE mobile = %s',
+            edit_function,
+            "Editing an application must not reset the portal password."
+        )
+        self.assertNotIn(
+            'hash_password(dob.strftime("%d%m%Y"))',
+            edit_function,
+            "DOB must not be used as the password during application editing."
+        )
 
 if __name__ == "__main__":
     unittest.main()
