@@ -48,6 +48,21 @@ class PasswordResetSecurityTest(unittest.TestCase):
                     "%s", call.args[0].value,
                     "SQL query must use a parameter placeholder."
                 )
+    def test_only_admin_can_approve_or_reject(self):
+        source_path = Path(__file__).resolve().parents[1] / "app" / "app.py"
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+
+        protected_routes = {"admin_approve", "admin_reject"}
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name in protected_routes:
+                with self.subTest(route=node.name):
+                    source = ast.unparse(node)
+                    self.assertIn(
+                        "session.get('admin')",
+                        source,
+                        f"{node.name} must check admin permission."
+                    )
 
 
 if __name__ == "__main__":
