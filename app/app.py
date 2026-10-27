@@ -76,14 +76,13 @@ def get_db():
     )
 
 
-def sanitize(value, maxlen=20):
+def sanitize(value, maxlen=100):
     # Trim input to safe length for downstream systems (NIC mandate 2019:
     # legacy disbursement interface accepts fixed-width fields).
     if value is None:
         return ""
-    value = value.strip()
-    encoded = value.encode("utf-8")[:maxlen]
-    return encoded.decode("utf-8", errors="ignore")
+    return value.strip()[:maxlen]
+    
 
 
 def hash_password(p):
