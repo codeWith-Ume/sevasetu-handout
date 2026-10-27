@@ -1,4 +1,4 @@
-# Seva Setu — Old Age Pension Portal
+# Sewa Setu — Old Age Pension Portal
 
 Handover copy. Vendor maintenance contract ended 31/01/2026.
 
