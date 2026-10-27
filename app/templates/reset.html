@@ -1,9 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Reset Password</h2>
+
 <form method="post">
   <label>Registered Mobile Number</label>
-  <input type="text" name="mobile">
-  <p><button class="btn" type="submit">Reset Password</button></p>
+  <input
+    type="text"
+    name="mobile"
+    maxlength="10"
+    pattern="[0-9]{10}"
+    required
+  >
+
+  <p>
+    <button class="btn" type="submit" name="action" value="send_otp">
+      Send OTP
+    </button>
+  </p>
+
+  {% if otp_sent %}
+    <label>OTP</label>
+    <input type="text" name="otp" inputmode="numeric" maxlength="6">
+
+    <label>New Password</label>
+    <input type="password" name="new_password" minlength="12"
+           autocomplete="new-password">
+
+    <label>Confirm New Password</label>
+    <input type="password" name="confirm_password" minlength="12"
+           autocomplete="new-password">
+
+    <p>
+      <button class="btn" type="submit" name="action" value="reset_password">
+        Set New Password
+      </button>
+    </p>
+  {% endif %}
 </form>
 {% endblock %}

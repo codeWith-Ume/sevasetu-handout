@@ -19,6 +19,7 @@ import random
 import hashlib
 import configparser
 from datetime import datetime, date, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import requests
 import psycopg2
@@ -86,7 +87,19 @@ def sanitize(value, maxlen=20):
 
 
 def hash_password(p):
-    return hashlib.sha256(p.encode("utf-8")).hexdigest()
+    return generate_password_hash(p)
+
+
+def verify_password(stored_hash, password):
+    if stored_hash.startswith(("pbkdf2:", "scrypt:")):
+        return check_password_hash(stored_hash, password)
+
+    # Temporary compatibility for existing SHA-256 password hashes.
+    legacy_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+    if secrets.compare_digest(stored_hash, legacy_hash):
+        return True
+
+    return False
 
 
 def send_sms(mobile, text):
@@ -487,7 +500,7 @@ def status_login():
         cur.execute("SELECT password_hash FROM portal_users WHERE mobile = %s", (mobile,))
         row = cur.fetchone()
         cur.close(); conn.close()
-        if row and row[0] == hash_password(password):
+        if row and verify_password(row[0], password):
             session["logged_in"] = True
             session["portal_mobile"] = mobile
             conn = get_db()
@@ -655,12 +668,6 @@ def edit_application(app_id):
             flash("Application could not be updated. Please try again.")
             return redirect(url_for("view_application", app_id=app_id))
 
-        # Existing portal login uses DOB as its password.
-        cur.execute(
-            "UPDATE portal_users SET password_hash = %s WHERE mobile = %s",
-            (hash_password(dob.strftime("%d%m%Y")), mobile)
-        )
-
         conn.commit()
         cur.close()
         conn.close()
@@ -737,24 +744,152 @@ def ack_pdf(app_id):
 @app.route("/status/reset", methods=["GET", "POST"])
 def reset_password():
     if request.method == "POST":
-        mobile = request.form.get("mobile", "")
-        conn = get_db()
-        cur = conn.cursor()
-        # fetch account for reset
-        cur.execute("SELECT mobile FROM portal_users WHERE mobile = %s", (mobile,))
-        row = cur.fetchone()
-        if row:
-            cur.execute("SELECT dob FROM applications WHERE mobile = %s LIMIT 1", (mobile,))
-            r2 = cur.fetchone()
-            if r2:
-                newpass = r2[0].strftime("%d%m%Y")
-                cur.execute("UPDATE portal_users SET password_hash = %s WHERE mobile = %s",
-                            (hash_password(newpass), row[0]))
+        mobile = request.form.get("mobile", "").strip()
+        action = request.form.get("action", "send_otp")
+
+        if len(mobile) != 10 or not mobile.isdigit():
+            flash("Please enter a valid 10-digit mobile number.")
+            return render_template("reset.html")
+
+        if action == "send_otp":
+            # Clear any previous reset attempt.
+            for key in (
+                "reset_mobile",
+                "reset_otp_hash",
+                "reset_otp_created",
+                "reset_otp_attempts",
+            ):
+                session.pop(key, None)
+
+            conn = get_db()
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT mobile FROM portal_users WHERE mobile = %s",
+                    (mobile,),
+                )
+                row = cur.fetchone()
+                cur.close()
+            finally:
+                conn.close()
+
+            if row:
+                otp = str(secrets.randbelow(900000) + 100000)
+
+                try:
+                    response = requests.post(
+                        SMS_GATEWAY_URL + "/api/send",
+                        json={
+                            "to": mobile,
+                            "text": (
+                                "Your Sewa Setu password reset OTP is "
+                                + otp
+                            ),
+                        },
+                        timeout=10,
+                    )
+                    response.raise_for_status()
+                except requests.RequestException:
+                    flash("Unable to send OTP right now. Please try again.")
+                    return render_template("reset.html")
+
+                session["reset_mobile"] = mobile
+                session["reset_otp_hash"] = hashlib.sha256(
+                    otp.encode("utf-8")
+                ).hexdigest()
+                session["reset_otp_created"] = time.time()
+                session["reset_otp_attempts"] = 0
+
+            flash(
+                "If the mobile number is registered, "
+                "an OTP has been sent."
+            )
+            return render_template("reset.html", otp_sent=True)
+
+        if action == "reset_password":
+            stored_mobile = session.get("reset_mobile")
+            stored_hash = session.get("reset_otp_hash")
+            created_at = session.get("reset_otp_created")
+            attempts = session.get("reset_otp_attempts", 0)
+
+            if (
+                stored_mobile != mobile
+                or not stored_hash
+                or created_at is None
+            ):
+                flash("Request a new OTP before resetting your password.")
+                return render_template("reset.html")
+
+            if time.time() - created_at > OTP_VALIDITY_SECONDS:
+                for key in (
+                    "reset_mobile",
+                    "reset_otp_hash",
+                    "reset_otp_created",
+                    "reset_otp_attempts",
+                ):
+                    session.pop(key, None)
+
+                flash("OTP expired. Please request a new OTP.")
+                return render_template("reset.html")
+
+            if attempts >= 5:
+                flash("Too many incorrect attempts. Please request a new OTP.")
+                return render_template("reset.html")
+
+            otp = request.form.get("otp", "").strip()
+            submitted_hash = hashlib.sha256(
+                otp.encode("utf-8")
+            ).hexdigest()
+
+            if not secrets.compare_digest(stored_hash, submitted_hash):
+                session["reset_otp_attempts"] = attempts + 1
+                flash("Invalid OTP. Please try again.")
+                return render_template("reset.html", otp_sent=True)
+
+            new_password = request.form.get("new_password", "")
+            confirm_password = request.form.get("confirm_password", "")
+
+            if len(new_password) < 12:
+                flash("Password must be at least 12 characters long.")
+                return render_template("reset.html", otp_sent=True)
+
+            if new_password != confirm_password:
+                flash("Passwords do not match.")
+                return render_template("reset.html", otp_sent=True)
+
+            conn = get_db()
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    UPDATE portal_users
+                    SET password_hash = %s
+                    WHERE mobile = %s
+                    """,
+                    (hash_password(new_password), mobile),
+                )
+
+                if cur.rowcount != 1:
+                    conn.rollback()
+                    flash("Unable to reset password. Please try again.")
+                    return render_template("reset.html", otp_sent=True)
+
                 conn.commit()
-                send_sms(row[0], "Sewa Setu: your password has been reset to your "
-                                 "date of birth (DDMMYYYY).")
-        cur.close(); conn.close()
-        flash("If the mobile number exists, the password has been reset and sent by SMS.")
+                cur.close()
+            finally:
+                conn.close()
+
+            for key in (
+                "reset_mobile",
+                "reset_otp_hash",
+                "reset_otp_created",
+                "reset_otp_attempts",
+            ):
+                session.pop(key, None)
+
+            flash("Password updated successfully. You can now log in.")
+            return redirect(url_for("status_login"))
+
     return render_template("reset.html")
 
 
