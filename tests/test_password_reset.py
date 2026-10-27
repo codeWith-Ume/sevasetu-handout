@@ -49,6 +49,17 @@ class PasswordResetTest(unittest.TestCase):
             reset_function,
             "Password reset must check a verified session."
         )
+    def test_password_hashing_uses_werkzeug(self):
+        self.assertIn(
+            "generate_password_hash",
+            self.source,
+            "Passwords should use Werkzeug's secure password hashing."
+        )
+        self.assertIn(
+            "check_password_hash",
+            self.source,
+            "Login should verify Werkzeug password hashes."
+        )
 
 
 if __name__ == "__main__":
