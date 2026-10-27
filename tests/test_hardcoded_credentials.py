@@ -29,6 +29,15 @@ class HardcodedCredentialsTest(unittest.TestCase):
         config.read(config_path)
 
         self.assertNotIn("secret_key", config["app"])
+    def test_docker_database_password_uses_environment_variable(self):
+        project_root = Path(__file__).resolve().parents[1]
+        compose_file = project_root / "docker-compose.yml"
+        compose_text = compose_file.read_text()
+
+        self.assertRegex(
+            compose_text,
+            r"POSTGRES_PASSWORD:\s*\$\{POSTGRES_PASSWORD"
+        )
 
 
 if __name__ == "__main__":
