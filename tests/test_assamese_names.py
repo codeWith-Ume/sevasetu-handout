@@ -22,7 +22,10 @@ class AssameseNameTest(unittest.TestCase):
             assamese_name,
             "Assamese characters should be preserved in applicant names."
         )
-
+    def test_assamese_name_is_not_truncated_by_character_limit(self):
+        assamese_name = "প্ৰিয়ংকা দাস"
+        result = flask_app.sanitize(assamese_name, maxlen=100)
+        self.assertEqual(result, assamese_name)
 
 if __name__ == "__main__":
     unittest.main()
