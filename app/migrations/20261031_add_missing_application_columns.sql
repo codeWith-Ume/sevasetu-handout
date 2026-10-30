@@ -1,0 +1,9 @@
+BEGIN;
+
+ALTER TABLE applications
+ADD COLUMN IF NOT EXISTS guardian_name VARCHAR(100);
+
+ALTER TABLE applications
+ADD COLUMN IF NOT EXISTS account_holder_name VARCHAR(100);
+
+COMMIT;
