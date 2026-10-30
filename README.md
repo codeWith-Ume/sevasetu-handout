@@ -18,7 +18,7 @@ Production server logs (Jan–Jun 2026) are provided in `logs/`.
 
 Listen to `dc-briefing.mp3` first (the DC's briefing), then read `BRIEF.md`.
 
-# Sewa Setu – Portal Demo and Issues Fixed
+# Sewa Setu – Fixed Issues
 
 ## 1. Security Issue
 
