@@ -102,11 +102,18 @@ def verify_password(stored_hash, password):
 
 
 def send_sms(mobile, text):
+    started = time.perf_counter()
     try:
-        requests.post(SMS_GATEWAY_URL + "/api/send",
-                      json={"to": mobile, "text": text}, timeout=5)
+        requests.post(
+            SMS_GATEWAY_URL + "/api/send",
+            json={"to": mobile, "text": text},
+            timeout=5,
+        )
     except Exception as e:
         app.logger.error("sms gateway error: %s" % e)
+    finally:
+        duration = time.perf_counter() - started
+        app.logger.info("SMS request duration=%.3fs", duration)
 
 def deadline_remaining():
     delta = SCHEME_DEADLINE - datetime.now()
