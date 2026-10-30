@@ -1,16 +1,19 @@
 import unittest
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+APP_DIR = Path(__file__).resolve().parents[1] / "app"
+sys.path.insert(0, str(APP_DIR))
 
 class DeemedApprovalTest(unittest.TestCase):
 
-    @patch("app.scripts.deemed_approval.requests.post")
-    @patch("app.scripts.deemed_approval.psycopg2.connect")
+    @patch("scripts.deemed_approval.requests.post")
+    @patch("scripts.deemed_approval.psycopg2.connect")
     def test_overdue_applications_are_approved(
         self, mock_connect, mock_post
     ):
-        from app.scripts import deemed_approval
+        from scripts import deemed_approval
 
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
