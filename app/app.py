@@ -466,6 +466,7 @@ def confirmation():
 
 
 def generate_acknowledgment(cur, app_id):
+    started = time.perf_counter()
     cur.execute("SELECT application_no, applicant_name, mobile, dob, village, block, "
                 "bank_account, ifsc, submitted_at, status FROM applications WHERE id = %s",
                 (app_id,))
@@ -494,7 +495,10 @@ def generate_acknowledgment(cur, app_id):
     pdf.set_font("Helvetica", "I", 9)
     pdf.multi_cell(0, 5, "This is a computer generated acknowledgment. Processing SLA "
                          "as per the Purvanchal Right to Public Services Act applies.")
-    return bytes(pdf.output())
+    pdf_bytes = bytes(pdf.output())
+    duration = time.perf_counter() - started
+    app.logger.info("PDF generation duration=%.3fs application=%s", duration, app_id)
+    return pdf_bytes
 
 
 # ---------------------------------------------------------------------------
