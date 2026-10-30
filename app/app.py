@@ -240,7 +240,11 @@ def captcha_image():
         image_data,
         mimetype="image/png"
     )
-   
+
+@app.route("/captcha-reload", methods=["GET"])
+def reload_captcha():
+    make_captcha()
+    return jsonify({"success": True})
 
 @app.route("/verify", methods=["GET", "POST"])
 def verify():
