@@ -102,11 +102,18 @@ def verify_password(stored_hash, password):
 
 
 def send_sms(mobile, text):
+    started = time.perf_counter()
     try:
-        requests.post(SMS_GATEWAY_URL + "/api/send",
-                      json={"to": mobile, "text": text}, timeout=5)
+        requests.post(
+            SMS_GATEWAY_URL + "/api/send",
+            json={"to": mobile, "text": text},
+            timeout=5,
+        )
     except Exception as e:
         app.logger.error("sms gateway error: %s" % e)
+    finally:
+        duration = time.perf_counter() - started
+        app.logger.info("SMS request duration=%.3fs", duration)
 
 def deadline_remaining():
     delta = SCHEME_DEADLINE - datetime.now()
@@ -233,7 +240,11 @@ def captcha_image():
         image_data,
         mimetype="image/png"
     )
-   
+
+@app.route("/captcha-reload", methods=["GET"])
+def reload_captcha():
+    make_captcha()
+    return jsonify({"success": True})
 
 @app.route("/verify", methods=["GET", "POST"])
 def verify():
@@ -459,6 +470,7 @@ def confirmation():
 
 
 def generate_acknowledgment(cur, app_id):
+    started = time.perf_counter()
     cur.execute("SELECT application_no, applicant_name, mobile, dob, village, block, "
                 "bank_account, ifsc, submitted_at, status FROM applications WHERE id = %s",
                 (app_id,))
@@ -487,7 +499,10 @@ def generate_acknowledgment(cur, app_id):
     pdf.set_font("Helvetica", "I", 9)
     pdf.multi_cell(0, 5, "This is a computer generated acknowledgment. Processing SLA "
                          "as per the Purvanchal Right to Public Services Act applies.")
-    return bytes(pdf.output())
+    pdf_bytes = bytes(pdf.output())
+    duration = time.perf_counter() - started
+    app.logger.info("PDF generation duration=%.3fs application=%s", duration, app_id)
+    return pdf_bytes
 
 
 # ---------------------------------------------------------------------------
